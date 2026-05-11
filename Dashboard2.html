@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dashboard · Muestras 2026</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+
+  :root {
+
+    --bg: #0d0f14;
+
+    --surface: #13161e;
+
+    --surface2: #1a1e2a;
+
+    --border: #252836;
+
+    --accent: #e8c547;
+
+    --accent2: #4fc3f7;
+
+    --accent3: #f06292;
+
+    --accent4: #81c784;
+
+    --accent5: #ff8a65;
+
+    --text: #e8eaf0;
+
+    --muted: #6b7280;
+
+    --digital: #4fc3f7;
+
+    --conv: #f06292;
+
+    --reggiani: #a78bfa;
+
+    --atexco: #34d399;
+
+    --mimaki: #fbbf24;
+
+    --rotativa: #f87171;
+
+    --plana: #60a5fa;
+
+  }
+
+ 
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+ 
+
+  body {
+
+    font-family: 'DM Mono', monospace;
+
+    background: var(--bg);
+
+    color: var(--text);
+
+    min-height: 100vh;
+
+    overflow-x: hidden;
+
+  }
+
+ 
+
+  /* Grain overlay */
+
+  body::before {
+
+    content: '';
+
+    position: fixed; inset: 0;
+
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+
+    pointer-events: none; z-index: 999; opacity: 0.4;
+
+  }
+
+ 
+
+  /* ─── HEADER ─── */
+
+  header {
+
+    padding: 32px 48px 24px;
+
+    border-bottom: 1px solid var(--border);
+
+    display: flex; align-items: flex-end; justify-content: space-between;
+
+    gap: 24px; flex-wrap: wrap;
+
+  }
+
+ 
+
+  .logo-block h1 {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 2rem; font-weight: 800;
+
+    letter-spacing: -0.04em;
+
+    color: var(--text);
+
+  }
+
+ 
+
+  .logo-block h1 span { color: var(--accent); }
+
+ 
+
+  .logo-block p {
+
+    font-size: 0.72rem; color: var(--muted);
+
+    letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px;
+
+  }
+
+ 
+
+  .header-meta {
+
+    font-size: 0.7rem; color: var(--muted);
+
+    text-align: right; line-height: 1.8;
+
+  }
+
+ 
+
+  .header-meta strong { color: var(--accent); font-weight: 500; }
+
+ 
+
+  /* ─── UPLOAD ZONE ─── */
+
+  .upload-wrapper {
+
+    padding: 48px;
+
+    display: flex; flex-direction: column; align-items: center;
+
+    gap: 16px; min-height: 60vh; justify-content: center;
+
+  }
+
+ 
+
+  .drop-zone {
+
+    border: 2px dashed var(--border);
+
+    border-radius: 16px;
+
+    width: 100%; max-width: 560px;
+
+    padding: 64px 32px;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: border-color .2s, background .2s;
+
+    position: relative;
+
+  }
+
+ 
+
+  .drop-zone:hover, .drop-zone.dragging {
+
+    border-color: var(--accent);
+
+    background: rgba(232,197,71,.04);
+
+  }
+
+ 
+
+  .drop-zone input[type=file] {
+
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+
+  }
+
+ 
+
+  .drop-icon {
+
+    font-size: 3rem; margin-bottom: 16px; display: block;
+
+    filter: grayscale(1); transition: filter .2s;
+
+  }
+
+ 
+
+  .drop-zone:hover .drop-icon { filter: none; }
+
+ 
+
+  .drop-zone h2 {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;
+
+  }
+
+ 
+
+  .drop-zone p { font-size: 0.75rem; color: var(--muted); }
+
+  .drop-zone .ext { color: var(--accent); font-weight: 500; }
+
+ 
+
+  .upload-hint {
+
+    font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+
+  }
+
+ 
+
+  /* ─── DASHBOARD ─── */
+
+  #dashboard { display: none; padding: 32px 48px 64px; }
+
+ 
+
+  /* Reload button */
+
+  .reload-btn {
+
+    display: inline-flex; align-items: center; gap: 8px;
+
+    background: transparent; border: 1px solid var(--border);
+
+    color: var(--muted); font-family: 'DM Mono', monospace;
+
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+
+    padding: 8px 16px; border-radius: 8px; cursor: pointer;
+
+    transition: all .2s; margin-bottom: 40px;
+
+  }
+
+ 
+
+  .reload-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+ 
+
+  /* Section label */
+
+  .section-label {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 0.65rem; letter-spacing: 0.2em;
+
+    text-transform: uppercase; color: var(--accent);
+
+    margin-bottom: 20px; padding-left: 2px;
+
+    display: flex; align-items: center; gap: 12px;
+
+  }
+
+ 
+
+  .section-label::after {
+
+    content: ''; flex: 1; height: 1px; background: var(--border);
+
+  }
+
+ 
+
+  /* ─── STAT CARDS ─── */
+
+  .stats-row {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+
+    gap: 16px; margin-bottom: 48px;
+
+  }
+
+ 
+
+  .stat-card {
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    padding: 20px 22px;
+
+    position: relative; overflow: hidden;
+
+    transition: transform .2s;
+
+  }
+
+ 
+
+  .stat-card:hover { transform: translateY(-2px); }
+
+ 
+
+  .stat-card::before {
+
+    content: ''; position: absolute;
+
+    top: 0; left: 0; right: 0; height: 3px;
+
+    background: var(--card-color, var(--accent));
+
+  }
+
+ 
+
+  .stat-card .label {
+
+    font-size: 0.65rem; color: var(--muted);
+
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px;
+
+  }
+
+ 
+
+  .stat-card .value {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 2.4rem; font-weight: 800;
+
+    color: var(--card-color, var(--text));
+
+    line-height: 1;
+
+  }
+
+ 
+
+  .stat-card .sub {
+
+    font-size: 0.65rem; color: var(--muted); margin-top: 6px;
+
+  }
+
+ 
+
+  /* ─── CHARTS GRID ─── */
+
+  .charts-grid {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 24px; margin-bottom: 48px;
+
+  }
+
+ 
+
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+
+ 
+
+  .chart-card {
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    padding: 28px 28px 24px;
+
+  }
+
+ 
+
+  .chart-card.wide { grid-column: 1 / -1; }
+
+ 
+
+  .chart-title {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 0.85rem; font-weight: 700;
+
+    margin-bottom: 4px; color: var(--text);
+
+  }
+
+ 
+
+  .chart-sub {
+
+    font-size: 0.65rem; color: var(--muted);
+
+    margin-bottom: 24px; letter-spacing: 0.06em;
+
+  }
+
+ 
+
+  .chart-wrap { position: relative; height: 260px; }
+
+ 
+
+  /* ─── TABLES ─── */
+
+  .tables-grid {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 24px; margin-bottom: 48px;
+
+  }
+
+ 
+
+  @media (max-width: 900px) { .tables-grid { grid-template-columns: 1fr; } }
+
+ 
+
+  .table-card {
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    padding: 28px;
+
+    overflow: hidden;
+
+  }
+
+ 
+
+  .table-card.wide { grid-column: 1 / -1; }
+
+ 
+
+  .table-title {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 0.85rem; font-weight: 700;
+
+    margin-bottom: 4px;
+
+  }
+
+ 
+
+  .table-sub {
+
+    font-size: 0.65rem; color: var(--muted);
+
+    margin-bottom: 20px; letter-spacing: 0.06em;
+
+  }
+
+ 
+
+  .data-table {
+
+    width: 100%; border-collapse: collapse; font-size: 0.72rem;
+
+  }
+
+ 
+
+  .data-table thead th {
+
+    text-align: left; padding: 8px 12px;
+
+    font-size: 0.62rem; letter-spacing: 0.12em;
+
+    text-transform: uppercase; color: var(--muted);
+
+    border-bottom: 1px solid var(--border);
+
+  }
+
+ 
+
+  .data-table tbody tr {
+
+    border-bottom: 1px solid rgba(255,255,255,.04);
+
+    transition: background .15s;
+
+  }
+
+ 
+
+  .data-table tbody tr:hover { background: rgba(255,255,255,.03); }
+
+  .data-table tbody tr:last-child { border-bottom: none; }
+
+ 
+
+  .data-table td {
+
+    padding: 10px 12px; vertical-align: middle;
+
+  }
+
+ 
+
+  .data-table td:first-child { font-weight: 500; }
+
+ 
+
+  .badge {
+
+    display: inline-block;
+
+    padding: 2px 8px; border-radius: 4px;
+
+    font-size: 0.65rem; font-weight: 500;
+
+    letter-spacing: 0.06em;
+
+  }
+
+ 
+
+  .badge-digital { background: rgba(79,195,247,.15); color: var(--digital); }
+
+  .badge-conv    { background: rgba(240,98,146,.15); color: var(--conv); }
+
+ 
+
+  /* Lead time highlight */
+
+  .lead-card {
+
+    background: var(--surface2);
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px; padding: 24px 28px;
+
+    display: flex; align-items: center; gap: 20px;
+
+  }
+
+ 
+
+  .lead-card .big-num {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 3.2rem; font-weight: 800; line-height: 1;
+
+    min-width: 80px;
+
+  }
+
+ 
+
+  .lead-card .info .name {
+
+    font-family: 'Syne', sans-serif;
+
+    font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;
+
+  }
+
+ 
+
+  .lead-card .info .count {
+
+    font-size: 0.68rem; color: var(--muted);
+
+  }
+
+ 
+
+  .lead-time-grid {
+
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+
+    margin-bottom: 48px;
+
+  }
+
+ 
+
+  @media (max-width: 700px) { .lead-time-grid { grid-template-columns: 1fr; } }
+
+ 
+
+  /* Progress bar */
+
+  .progress-wrap { margin-top: 6px; }
+
+ 
+
+  .progress-bg {
+
+    background: var(--border);
+
+    border-radius: 4px; height: 5px;
+
+    overflow: hidden;
+
+  }
+
+ 
+
+  .progress-fill {
+
+    height: 100%; border-radius: 4px;
+
+    background: var(--fill-color, var(--accent));
+
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+
+    width: 0;
+
+  }
+
+ 
+
+  .pct-text {
+
+    font-size: 0.65rem; color: var(--muted); margin-top: 3px;
+
+  }
+
+ 
+
+  /* Scrollable table */
+
+  .table-scroll { max-height: 400px; overflow-y: auto; }
+
+ 
+
+  .table-scroll::-webkit-scrollbar { width: 4px; }
+
+  .table-scroll::-webkit-scrollbar-track { background: transparent; }
+
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+ 
+
+  /* Loading */
+
+  #loading {
+
+    display: none; position: fixed; inset: 0;
+
+    background: rgba(13,15,20,.85); backdrop-filter: blur(8px);
+
+    z-index: 9999; align-items: center; justify-content: center;
+
+    flex-direction: column; gap: 16px;
+
+  }
+
+ 
+
+  .spinner {
+
+    width: 40px; height: 40px;
+
+    border: 3px solid var(--border);
+
+    border-top-color: var(--accent);
+
+    border-radius: 50%;
+
+    animation: spin .7s linear infinite;
+
+  }
+
+ 
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+ 
+
+  .loading-text {
+
+    font-size: 0.72rem; color: var(--muted);
+
+    letter-spacing: 0.12em; text-transform: uppercase;
+
+  }
+
+ 
+
+  /* Animations */
+
+  @keyframes fadeUp {
+
+    from { opacity: 0; transform: translateY(20px); }
+
+    to   { opacity: 1; transform: translateY(0); }
+
+  }
+
+ 
+
+  .animate { animation: fadeUp .5s ease both; }
+
+</style>
+
+</head>
+
+<body>
+
+ 
+
+<header>
+
+  <div class="logo-block">
+
+    <h1>MUESTRAS <span>2026</span></h1>
+
+    <p>Dashboard · Análisis de Estampación</p>
+
+  </div>
+
+  <div class="header-meta" id="file-info">
+
+    Carga tu base de datos para comenzar
+
+  </div>
+
+</header>
+
+ 
+
+<!-- Upload -->
+
+<div class="upload-wrapper" id="upload-section">
+
+  <div class="drop-zone" id="drop-zone">
+
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+
+    <span class="drop-icon">📊</span>
+
+    <h2>Cargar base de datos</h2>
+
+    <p>Arrastra tu archivo aquí o haz clic para seleccionarlo</p>
+
+    <p class="ext" style="margin-top:8px">.xlsx / .xls</p>
+
+  </div>
+
+  <p class="upload-hint">La hoja debe llamarse <strong style="color:var(--accent)">2026</strong></p>
+
+</div>
+
+ 
+
+<!-- Loading spinner -->
+
+<div id="loading">
+
+  <div class="spinner"></div>
+
+  <p class="loading-text">Procesando datos…</p>
+
+</div>
+
+ 
+
+<!-- Dashboard -->
+
+<div id="dashboard">
+
+ 
+
+  <button class="reload-btn" onclick="resetDashboard()">
+
+    ↩ Cargar otro archivo
+
+  </button>
+
+ 
+
+  <!-- ── MUESTRAS EN PROCESO ── -->
+
+  <div class="section-label">Muestras en proceso</div>
+
+ 
+
+  <div class="stats-row" id="stats-row"></div>
+
+ 
+
+  <div class="charts-grid">
+
+    <div class="chart-card">
+
+      <div class="chart-title">Tecnología Digital</div>
+
+      <div class="chart-sub">Distribución por máquina · EN PROCESO</div>
+
+      <div class="chart-wrap"><canvas id="chart-digital"></canvas></div>
+
+    </div>
+
+    <div class="chart-card">
+
+      <div class="chart-title">Tecnología Convencional</div>
+
+      <div class="chart-sub">Distribución por máquina · EN PROCESO</div>
+
+      <div class="chart-wrap"><canvas id="chart-conv"></canvas></div>
+
+    </div>
+
+    <div class="chart-card wide">
+
+      <div class="chart-title">Comparativa General</div>
+
+      <div class="chart-sub">Total muestras en proceso por máquina</div>
+
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-bar"></canvas></div>
+
+    </div>
+
+  </div>
+
+ 
+
+  <!-- ── LEAD TIME ── -->
+
+  <div class="section-label">Lead time promedio del proceso</div>
+
+ 
+
+  <div class="lead-time-grid" id="lead-time-grid"></div>
+
+ 
+
+  <!-- ── PENDIENTES POR DISEÑADOR ── -->
+
+  <div class="section-label">Pendientes por diseñador</div>
+
+ 
+
+  <div class="tables-grid">
+
+    <div class="table-card">
+
+      <div class="chart-title">Muestras sin fecha de entrega</div>
+
+      <div class="chart-sub">Ordenadas por cantidad · desc</div>
+
+      <div class="table-scroll">
+
+        <table class="data-table" id="table-pendientes">
+
+          <thead><tr><th>#</th><th>Diseñador</th><th>Pendientes</th></tr></thead>
+
+          <tbody></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+ 
+
+    <!-- ── CUMPLIMIENTO ── -->
+
+    <div class="table-card">
+
+      <div class="chart-title">Cumplimiento por diseñador</div>
+
+      <div class="chart-sub">Excluye: Julián Garivello · ordenado % desc</div>
+
+      <div class="table-scroll">
+
+        <table class="data-table" id="table-cumpl">
+
+          <thead>
+
+            <tr>
+
+              <th>Diseñador</th>
+
+              <th>Cumpl.</th>
+
+              <th>Incumpl.</th>
+
+              <th>Total</th>
+
+              <th>%</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+ 
+
+</div>
+
+ 
+
+<script>
+
+// ─────────────────────────────────────────────────────────
+
+// HELPERS
+
+// ─────────────────────────────────────────────────────────
+
+function normalizar(s) {
+
+  return String(s)
+
+    .normalize("NFD")
+
+    .replace(/[\u0300-\u036f]/g, "")
+
+    .replace(/[\s_]+/g, "")
+
+    .toUpperCase();
+
+}
+
+ 
+
+function buscarCol(columnas, fragmento) {
+
+  for (const col of columnas) {
+
+    if (normalizar(col).includes(fragmento)) return col;
+
+  }
+
+  return null;
+
+}
+
+ 
+
+function toDate(v) {
+
+  if (!v) return null;
+
+  if (v instanceof Date) return v;
+
+  if (typeof v === 'number') {
+
+    // Excel serial date
+
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+
+    return isNaN(d) ? null : d;
+
+  }
+
+  const d = new Date(v);
+
+  return isNaN(d) ? null : d;
+
+}
+
+ 
+
+function promedio(arr) {
+
+  if (!arr.length) return 0;
+
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+
+}
+
+ 
+
+// ─────────────────────────────────────────────────────────
+
+// PROCESAMIENTO
+
+// ─────────────────────────────────────────────────────────
+
+function procesarDatos(workbook) {
+
+  // Buscar hoja 2026
+
+  let sheetName = workbook.SheetNames.find(n => n.trim() === '2026')
+
+    || workbook.SheetNames[0];
+
+ 
+
+  const ws = workbook.Sheets[sheetName];
+
+  const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+ 
+
+  if (!raw.length) throw new Error('La hoja está vacía.');
+
+ 
+
+  const cols = Object.keys(raw[0]);
+
+ 
+
+  const COL_DISEÑADOR  = buscarCol(cols, "DISENADOR");
+
+  const COL_TECNOLOGIA = buscarCol(cols, "TECNOLOG");
+
+  const COL_MAQUINA    = buscarCol(cols, "MAQUINA");
+
+  const COL_ESTADO     = buscarCol(cols, "ESTADOMUESTRA");
+
+  const COL_F_INGRESO  = buscarCol(cols, "FECHAINGRESO");
+
+  const COL_F_TRABAJO  = buscarCol(cols, "FECHATRABAJO");
+
+  const COL_F_ENTREGA  = buscarCol(cols, "FECHAENTREGA");
+
+  const COL_F_MUESTRA  = buscarCol(cols, "ENTREGAMUESTRA");
+
+ 
+
+  const missing = [
+
+    ['DISEÑADOR', COL_DISEÑADOR], ['TECNOLOGÍA', COL_TECNOLOGIA],
+
+    ['MÁQUINA', COL_MAQUINA], ['ESTADO MUESTRA', COL_ESTADO],
+
+    ['FECHA INGRESO', COL_F_INGRESO], ['FECHA TRABAJO', COL_F_TRABAJO],
+
+    ['FECHA ENTREGA', COL_F_ENTREGA], ['ENTREGA MUESTRA', COL_F_MUESTRA],
+
+  ].filter(([, v]) => !v).map(([k]) => k);
+
+ 
+
+  if (missing.length) {
+
+    throw new Error(`No se encontraron las columnas: ${missing.join(', ')}`);
+
+  }
+
+ 
+
+  const muestras = {
+
+    DIGITAL:       { ATEXCO: 0, REGGIANI: 0, MIMAKI: 0 },
+
+    CONVENCIONAL:  { ROTATIVA: 0, PLANA: 0 },
+
+  };
+
+ 
+
+  const leadTime = { DIGITAL: [], CONVENCIONAL: [] };
+
+  const cumplimiento = {};
+
+  const pendientes = {};
+
+ 
+
+  for (const fila of raw) {
+
+    const diseñador  = String(fila[COL_DISEÑADOR] || '').toUpperCase().trim();
+
+    const tecnologia = String(fila[COL_TECNOLOGIA] || '').toUpperCase().trim();
+
+    const maquina    = String(fila[COL_MAQUINA]    || '').toUpperCase().trim();
+
+    const estado     = String(fila[COL_ESTADO]     || '').toUpperCase().trim();
+
+ 
+
+    const fIngreso = toDate(fila[COL_F_INGRESO]);
+
+    const fTrabajo = toDate(fila[COL_F_TRABAJO]);
+
+    const fEntrega = toDate(fila[COL_F_ENTREGA]);
+
+    const fMuestra = toDate(fila[COL_F_MUESTRA]);
+
+ 
+
+    if (!diseñador || diseñador === 'NAN' || diseñador === 'NULL') continue;
+
+ 
+
+    const esDigital      = tecnologia.startsWith('DIGIT');
+
+    const esConvencional = tecnologia.startsWith('CONVENC');
+
+ 
+
+    // Pendientes
+
+    if (!pendientes[diseñador]) pendientes[diseñador] = 0;
+
+    if (!fEntrega) pendientes[diseñador]++;
+
+ 
+
+    // Muestras en proceso
+
+    if (estado === 'EN PROCESO') {
+
+      if (esDigital) {
+
+        if      (maquina === 'ATEXCO')   muestras.DIGITAL.ATEXCO++;
+
+        else if (maquina === 'REGGIANI') muestras.DIGITAL.REGGIANI++;
+
+        else if (maquina === 'MIMAKI')   muestras.DIGITAL.MIMAKI++;
+
+      } else if (esConvencional) {
+
+        if      (maquina === 'ROTATIVA') muestras.CONVENCIONAL.ROTATIVA++;
+
+        else if (maquina === 'PLANA')    muestras.CONVENCIONAL.PLANA++;
+
+      }
+
+    }
+
+ 
+
+    // Lead time
+
+    if (fIngreso && fMuestra) {
+
+      const dias = (fMuestra - fIngreso) / (1000 * 60 * 60 * 24);
+
+      if      (esDigital)      leadTime.DIGITAL.push(dias);
+
+      else if (esConvencional) leadTime.CONVENCIONAL.push(dias);
+
+    }
+
+ 
+
+    // Cumplimiento
+
+    if (!cumplimiento[diseñador]) cumplimiento[diseñador] = { cumplidas: 0, incumplidas: 0 };
+
+    if (fTrabajo && fEntrega) {
+
+      if (fEntrega <= fTrabajo) cumplimiento[diseñador].cumplidas++;
+
+      else                      cumplimiento[diseñador].incumplidas++;
+
+    }
+
+  }
+
+ 
+
+  return {
+
+    muestras,
+
+    leadTime: {
+
+      digital:      { avg: promedio(leadTime.DIGITAL),      n: leadTime.DIGITAL.length },
+
+      convencional: { avg: promedio(leadTime.CONVENCIONAL), n: leadTime.CONVENCIONAL.length },
+
+    },
+
+    pendientes,
+
+    cumplimiento,
+
+    totalFilas: raw.length,
+
+  };
+
+}
+
+ 
+
+// ─────────────────────────────────────────────────────────
+
+// RENDER DASHBOARD
+
+// ─────────────────────────────────────────────────────────
+
+let chartInstances = [];
+
+ 
+
+function destroyCharts() {
+
+  chartInstances.forEach(c => c.destroy());
+
+  chartInstances = [];
+
+}
+
+ 
+
+function renderDashboard(data, fileName) {
+
+  destroyCharts();
+
+ 
+
+  const { muestras, leadTime, pendientes, cumplimiento, totalFilas } = data;
+
+ 
+
+  // File info
+
+  document.getElementById('file-info').innerHTML =
+
+    `Archivo: <strong>${fileName}</strong><br>Filas procesadas: <strong>${totalFilas.toLocaleString()}</strong>`;
+
+ 
+
+  // ── STAT CARDS ──
+
+  const totalD = Object.values(muestras.DIGITAL).reduce((a,b)=>a+b,0);
+
+  const totalC = Object.values(muestras.CONVENCIONAL).reduce((a,b)=>a+b,0);
+
+  const totalG = totalD + totalC;
+
+ 
+
+  const cards = [
+
+    { label: 'Total en proceso', value: totalG, sub: 'Digital + Convencional', color: 'var(--accent)' },
+
+    { label: 'Digital total',    value: totalD, sub: 'Atexco + Reggiani + Mimaki', color: 'var(--digital)' },
+
+    { label: 'Atexco',           value: muestras.DIGITAL.ATEXCO,   sub: 'Máquina digital', color: 'var(--atexco)' },
+
+    { label: 'Reggiani',         value: muestras.DIGITAL.REGGIANI, sub: 'Máquina digital', color: 'var(--reggiani)' },
+
+    { label: 'Mimaki',           value: muestras.DIGITAL.MIMAKI,   sub: 'Máquina digital', color: 'var(--mimaki)' },
+
+    { label: 'Convencional total', value: totalC, sub: 'Rotativa + Plana', color: 'var(--conv)' },
+
+    { label: 'Rotativa',         value: muestras.CONVENCIONAL.ROTATIVA, sub: 'Máquina conv.', color: 'var(--rotativa)' },
+
+    { label: 'Plana',            value: muestras.CONVENCIONAL.PLANA,    sub: 'Máquina conv.', color: 'var(--plana)' },
+
+  ];
+
+ 
+
+  const statsRow = document.getElementById('stats-row');
+
+  statsRow.innerHTML = cards.map((c, i) => `
+
+    <div class="stat-card animate" style="--card-color:${c.color};animation-delay:${i*0.05}s">
+
+      <div class="label">${c.label}</div>
+
+      <div class="value">${c.value}</div>
+
+      <div class="sub">${c.sub}</div>
+
+    </div>
+
+  `).join('');
+
+ 
+
+  // ── CHART DIGITAL ──
+
+  const ctxD = document.getElementById('chart-digital').getContext('2d');
+
+  const cD = new Chart(ctxD, {
+
+    type: 'doughnut',
+
+    data: {
+
+      labels: ['Atexco', 'Reggiani', 'Mimaki'],
+
+      datasets: [{
+
+        data: [muestras.DIGITAL.ATEXCO, muestras.DIGITAL.REGGIANI, muestras.DIGITAL.MIMAKI],
+
+        backgroundColor: ['#34d399cc','#a78bfacc','#fbbf24cc'],
+
+        borderColor: '#13161e', borderWidth: 3,
+
+        hoverOffset: 12,
+
+      }],
+
+    },
+
+    options: {
+
+      responsive: true, maintainAspectRatio: false,
+
+      cutout: '65%',
+
+      plugins: {
+
+        legend: {
+
+          position: 'bottom',
+
+          labels: { color: '#9ca3af', font: { family: 'DM Mono', size: 11 }, padding: 16 },
+
+        },
+
+        tooltip: { callbacks: {
+
+          label: ctx => ` ${ctx.label}: ${ctx.raw} (${totalD ? (ctx.raw/totalD*100).toFixed(1) : 0}%)`
+
+        }},
+
+      },
+
+    },
+
+  });
+
+  chartInstances.push(cD);
+
+ 
+
+  // ── CHART CONVENCIONAL ──
+
+  const ctxC = document.getElementById('chart-conv').getContext('2d');
+
+  const cC = new Chart(ctxC, {
+
+    type: 'doughnut',
+
+    data: {
+
+      labels: ['Rotativa', 'Plana'],
+
+      datasets: [{
+
+        data: [muestras.CONVENCIONAL.ROTATIVA, muestras.CONVENCIONAL.PLANA],
+
+        backgroundColor: ['#f87171cc','#60a5facc'],
+
+        borderColor: '#13161e', borderWidth: 3,
+
+        hoverOffset: 12,
+
+      }],
+
+    },
+
+    options: {
+
+      responsive: true, maintainAspectRatio: false,
+
+      cutout: '65%',
+
+      plugins: {
+
+        legend: {
+
+          position: 'bottom',
+
+          labels: { color: '#9ca3af', font: { family: 'DM Mono', size: 11 }, padding: 16 },
+
+        },
+
+        tooltip: { callbacks: {
+
+          label: ctx => ` ${ctx.label}: ${ctx.raw} (${totalC ? (ctx.raw/totalC*100).toFixed(1) : 0}%)`
+
+        }},
+
+      },
+
+    },
+
+  });
+
+  chartInstances.push(cC);
+
+ 
+
+  // ── CHART BAR ──
+
+  const ctxB = document.getElementById('chart-bar').getContext('2d');
+
+  const cB = new Chart(ctxB, {
+
+    type: 'bar',
+
+    data: {
+
+      labels: ['Atexco', 'Reggiani', 'Mimaki', 'Rotativa', 'Plana'],
+
+      datasets: [{
+
+        data: [
+
+          muestras.DIGITAL.ATEXCO,
+
+          muestras.DIGITAL.REGGIANI,
+
+          muestras.DIGITAL.MIMAKI,
+
+          muestras.CONVENCIONAL.ROTATIVA,
+
+          muestras.CONVENCIONAL.PLANA,
+
+        ],
+
+        backgroundColor: ['#34d399cc','#a78bfacc','#fbbf24cc','#f87171cc','#60a5facc'],
+
+        borderRadius: 6, borderSkipped: false,
+
+      }],
+
+    },
+
+    options: {
+
+      responsive: true, maintainAspectRatio: false,
+
+      plugins: { legend: { display: false } },
+
+      scales: {
+
+        x: {
+
+          grid: { color: 'rgba(255,255,255,.05)' },
+
+          ticks: { color: '#9ca3af', font: { family: 'DM Mono', size: 11 } },
+
+        },
+
+        y: {
+
+          grid: { color: 'rgba(255,255,255,.05)' },
+
+          ticks: { color: '#9ca3af', font: { family: 'DM Mono', size: 11 }, stepSize: 1 },
+
+        },
+
+      },
+
+    },
+
+  });
+
+  chartInstances.push(cB);
+
+ 
+
+  // ── LEAD TIME ──
+
+  const ltGrid = document.getElementById('lead-time-grid');
+
+  ltGrid.innerHTML = `
+
+    <div class="lead-card animate" style="animation-delay:.1s">
+
+      <div class="big-num" style="color:var(--digital)">${leadTime.digital.avg.toFixed(1)}</div>
+
+      <div class="info">
+
+        <div class="name">Lead Time · Digital</div>
+
+        <div class="count">${leadTime.digital.n} muestras con datos completos</div>
+
+        <div class="count" style="color:var(--muted);margin-top:4px">días promedio (ingreso → entrega muestra)</div>
+
+      </div>
+
+    </div>
+
+    <div class="lead-card animate" style="animation-delay:.2s">
+
+      <div class="big-num" style="color:var(--conv)">${leadTime.convencional.avg.toFixed(1)}</div>
+
+      <div class="info">
+
+        <div class="name">Lead Time · Convencional</div>
+
+        <div class="count">${leadTime.convencional.n} muestras con datos completos</div>
+
+        <div class="count" style="color:var(--muted);margin-top:4px">días promedio (ingreso → entrega muestra)</div>
+
+      </div>
+
+    </div>
+
+  `;
+
+ 
+
+  // ── TABLA PENDIENTES ──
+
+  const tbody1 = document.querySelector('#table-pendientes tbody');
+
+  const pendArray = Object.entries(pendientes)
+
+    .filter(([, v]) => v > 0)
+
+    .sort((a, b) => b[1] - a[1]);
+
+ 
+
+  tbody1.innerHTML = pendArray.map(([dis, cant], i) => `
+
+    <tr>
+
+      <td style="color:var(--muted)">${i+1}</td>
+
+      <td>${dis}</td>
+
+      <td><span style="color:var(--accent);font-weight:600">${cant}</span></td>
+
+    </tr>
+
+  `).join('') || `<tr><td colspan="3" style="color:var(--muted);text-align:center;padding:20px">Sin pendientes</td></tr>`;
+
+ 
+
+  // ── TABLA CUMPLIMIENTO ──
+
+  const EXCLUIR = normalizar("Julián Garivello");
+
+  const tbody2 = document.querySelector('#table-cumpl tbody');
+
+ 
+
+  const cumplArray = Object.entries(cumplimiento)
+
+    .filter(([dis]) => !normalizar(dis).includes("JULIANGANGARIVELLO") && !normalizar(dis).includes("JULIANGARIVELLO"))
+
+    .map(([dis, d]) => {
+
+      const total = d.cumplidas + d.incumplidas;
+
+      const pct   = total > 0 ? d.cumplidas / total * 100 : 0;
+
+      return { dis, ...d, total, pct };
+
+    })
+
+    .sort((a, b) => b.pct - a.pct);
+
+ 
+
+  tbody2.innerHTML = cumplArray.map(row => {
+
+    const color = row.pct >= 80 ? 'var(--accent4)' : row.pct >= 50 ? 'var(--accent)' : 'var(--accent3)';
+
+    return `
+
+      <tr>
+
+        <td>${row.dis}</td>
+
+        <td style="color:var(--accent4)">${row.cumplidas}</td>
+
+        <td style="color:var(--accent3)">${row.incumplidas}</td>
+
+        <td>${row.total}</td>
+
+        <td>
+
+          <span style="color:${color};font-weight:600">${row.pct.toFixed(1)}%</span>
+
+          <div class="progress-wrap">
+
+            <div class="progress-bg">
+
+              <div class="progress-fill" style="--fill-color:${color};width:${row.pct}%"></div>
+
+            </div>
+
+          </div>
+
+        </td>
+
+      </tr>
+
+    `;
+
+  }).join('') || `<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Sin datos</td></tr>`;
+
+ 
+
+  // Show dashboard
+
+  document.getElementById('upload-section').style.display = 'none';
+
+  document.getElementById('dashboard').style.display = 'block';
+
+ 
+
+  // Animate progress bars
+
+  setTimeout(() => {
+
+    document.querySelectorAll('.progress-fill').forEach(el => {
+
+      // already set via inline style
+
+    });
+
+  }, 100);
+
+}
+
+ 
+
+// ─────────────────────────────────────────────────────────
+
+// FILE HANDLING
+
+// ─────────────────────────────────────────────────────────
+
+function handleFile(file) {
+
+  if (!file) return;
+
+  if (!file.name.match(/\.xlsx?$/i)) {
+
+    alert('Por favor selecciona un archivo .xlsx o .xls');
+
+    return;
+
+  }
+
+ 
+
+  document.getElementById('loading').style.display = 'flex';
+
+ 
+
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+
+    try {
+
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: false });
+
+      const data = procesarDatos(wb);
+
+      renderDashboard(data, file.name);
+
+    } catch (err) {
+
+      alert('Error al procesar el archivo:\n' + err.message);
+
+      console.error(err);
+
+    } finally {
+
+      document.getElementById('loading').style.display = 'none';
+
+    }
+
+  };
+
+  reader.readAsArrayBuffer(file);
+
+}
+
+ 
+
+function resetDashboard() {
+
+  destroyCharts();
+
+  document.getElementById('dashboard').style.display = 'none';
+
+  document.getElementById('upload-section').style.display = 'flex';
+
+  document.getElementById('file-input').value = '';
+
+  document.getElementById('file-info').textContent = 'Carga tu base de datos para comenzar';
+
+}
+
+ 
+
+// ─────────────────────────────────────────────────────────
+
+// EVENT LISTENERS
+
+// ─────────────────────────────────────────────────────────
+
+document.getElementById('file-input').addEventListener('change', e => {
+
+  handleFile(e.target.files[0]);
+
+});
+
+ 
+
+const dz = document.getElementById('drop-zone');
+
+ 
+
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragging'); });
+
+dz.addEventListener('dragleave', () => dz.classList.remove('dragging'));
+
+dz.addEventListener('drop', e => {
+
+  e.preventDefault();
+
+  dz.classList.remove('dragging');
+
+  handleFile(e.dataTransfer.files[0]);
+
+});
+
+</script>
+
+</body>
+
+</html>
+
+ 
